@@ -1,0 +1,60 @@
+# Copyright (c) 2018, Jihoon Yi <baram204@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+# This based on Mikkel Kroman's <mk@maero.dk> dockerfile
+FROM armv7/armhf-debian
+
+MAINTAINER Jihoon Yi <baram204@gmail.com>
+
+# Create the journey user and group.
+RUN groupadd -r journey && useradd -r -g journey journey
+
+# Ensure that our package database is up to date.
+RUN apt-get update \
+  && apt-get install -y unzip curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Environment variables needed for download and verification of the package.
+ENV JOURNEY_VERSION 0.2.0
+ENV JOURNEY_DOWNLOAD_URL "https://github.com/kabukky/journey/releases/download/v${JOURNEY_VERSION}/journey-linux-arm-7.zip"
+ENV JOURNEY_SHA256 "5cac97369766127ad1d2bd389879bf8c1d8d316273cc141d579dc5bf839b78f8"
+
+# Build and install Journey.
+RUN set -x \
+  && curl -sSL "${JOURNEY_DOWNLOAD_URL}" -o journey.zip \
+  && echo "${JOURNEY_SHA256} *journey.zip" | sha256sum -c - \
+  && unzip journey.zip -d /home/journey && rm journey.zip \
+  && mkdir -p /srv/journey \
+  && mv /home/journey/* /srv/journey && rm -Rf /home/journey
+
+# Ensure that the /srv/journey directory is owned by the journey user.
+RUN chown -R journey:journey /srv/journey
+
+# Expose the required network ports.
+#
+# Port 8084 is the default HTTP port.
+# Port 8085 is the default HTTPS port.
+EXPOSE 8084 8085
+
+# Copy the entrypoint script and set it as our entry point.
+USER journey
+WORKDIR /srv/journey
+ENTRYPOINT ["/srv/journey/journey"]
