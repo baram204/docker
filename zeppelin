@@ -47,7 +47,7 @@ RUN echo "$LOG_TAG Install java8" && \
 
 # should install conda first before numpy, matploylib since pip and python will be installed by conda
 RUN echo "$LOG_TAG Install miniconda2 related packages" && \
-    apt-get -y update && \
+    apt-get -y update --fix-missing && \
     apt-get install -y bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 \
     git mercurial subversion && \
